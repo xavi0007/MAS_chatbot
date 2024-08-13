@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template, redirect, session
 from run_llm import LLM
 
 app = Flask(__name__)
+
 users = {
     'id1': '1234',
     'id2': 'password2'
@@ -21,7 +22,7 @@ def feedback():
     data = request.json
     feedback = data.get('feedback', '')
     # Here you can handle the feedback (e.g., log it, store it in a database, etc.)
-    print(f'Received feedback: {feedback}')
+    # print(f'Received feedback: {feedback}') 
     if feedback == "good":
         rep = calculate_rep(1)
     else:
@@ -42,7 +43,7 @@ def chat():
     global COUNT 
     COUNT += 1
     # place holder
-    response = get_bot_response(message)
+    # response = get_bot_response(message)
     evaluate_response = f'{COUNT}'
     
     return jsonify({'response': response, 'evaluation': evaluate_response})
