@@ -7,7 +7,7 @@ users = {
     'id2': 'password2'
 }    
 messages = []
-# llm = LLM()
+llm = LLM()
 
 cur_reputation = 0.5
 COUNT = 0
@@ -26,9 +26,9 @@ def feedback():
         rep = calculate_rep(1)
     else:
         rep = calculate_rep(0)
-    # followup_response = llm.follow_up_llm(rep, messages[-1])
-    followup_response = 'thanks'
-    print(followup_response)
+    followup_response = llm.follow_up_llm(rep, messages[-1])
+    # followup_response = 'thanks'
+    # print(followup_response)
     return jsonify({'followup': followup_response})
 
 @app.route('/chat', methods=['POST'])
@@ -36,8 +36,8 @@ def chat():
     data = request.json
     message = data.get('message', '')
     messages.append(message)
-    # response = llm.infer_llm(message, 'user')
-    # evaluate_response = llm.infer_llm(response, 'evaluator')
+    response = llm.infer_llm(message, 'user')
+    evaluate_response = llm.infer_llm(response, 'evaluator')
     
     global COUNT 
     COUNT += 1
