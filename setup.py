@@ -9,7 +9,7 @@ def get_requirements(path: str):
 
 setup(
     name='PrivateLLM',
-    version='1.0',
+    version='0.1',
     long_description="A private LLM based MAS",
     author='Xavier',
     packages= find_packages(),
