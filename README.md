@@ -1,10 +1,6 @@
 # A foundation model based multi agent system.
 
-On top of a normal LLM chatbot, I added an AI evaluator to evaluate the chatbot's response on the fly and offer 'advice' for improvements. 
-The evaluator should also detect any possible hallucinations. The LLM chatbot is also capable of recieving simple feedback from user. If feedback is bad, perhaps LLM requires
-more prompting and follow ups from the user to output better response. This hopes to mitigate some parts of the garbage in, garbage out problem. 
-
-The entire system is deployed on a flask system. Currently, the LLM model is ran locally. 
+Enhanced a standard LLM chatbot by integrating an AI evaluator that assesses the chatbot's responses in real-time and provides suggestions for improvements. This evaluator also identifies potential hallucinations. The chatbot can accept basic user feedback, and if the feedback indicates issues, the LLM may require additional prompts and follow-ups to generate a better response. This approach aims to reduce the impact of the garbage in, garbage out problem. The entire system is deployed on a Flask platform, with the LLM model currently running locally.
 
 ## To get started
 
