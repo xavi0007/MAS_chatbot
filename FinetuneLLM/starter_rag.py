@@ -4,7 +4,7 @@ from llama_index.llms.ollama import Ollama
 
 
 reader = SimpleDirectoryReader(
-    input_files=["/home/xavier002/Private_LLM/data/paul_graham_essay.txt"]
+    input_files=["~/Private_LLM/data/paul_graham_essay.txt"]
 )
 docs = reader.load_data()
 print(f"Loaded {len(docs)} docs")
