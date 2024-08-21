@@ -14,8 +14,8 @@ python PrivateLLM/main.py
 ```
 
 ### Future work
-- Distributed and prviate data training for the chatbot
-- Futher integration of a RAG system
+- Distributed and private data training for the chatbot
+- Further integration of a RAG system
 - Optimization of resources usage
 - Progressive Online Fine-tuning for the AI agents
 - Multiple Agent working together synchronously
