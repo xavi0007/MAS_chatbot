@@ -172,6 +172,9 @@ class LLM:
 
     def find_score(self, response):
         score = re.search("[1]?[0-9]", response)
-        print(score.group(0))
-        return int(score.group(0))
+        if score:
+            print(score.group(0))
+            return int(score.group(0))
+        else:
+            return 3
 
