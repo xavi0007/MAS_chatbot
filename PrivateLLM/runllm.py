@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 from datasets import load_dataset
 from typing import Optional
+import re
+from utils import calculate_rep
 # from accelerate import Accelerator
 # from peft import (
 #     LoraConfig,
@@ -23,6 +25,7 @@ from typing import Optional
 # from transformers import pipeline
 import numpy as np
 from transformers import AutoTokenizer, pipeline
+from ragLLM import RAG
 
 class LLM:  
     def __init__(self) -> None:
@@ -43,9 +46,19 @@ class LLM:
         )
         self.prompt_history = []
         self.message_history = []
-    def follow_up_llm(self, rep: float, prompt: str):
+        self.llm_eval_score = 5
+        self.numerator = 1
+        self.denominator = 2
+        self.count = 1
+
+    #imporve the follow_up llm no links to RAG knowledge.
+    def follow_up_llm(self, user_score:int, prompt: str):
+        rep, numerator, denominator = calculate_rep(user_score, self.llm_eval_score, self.count, self.numerator, self.denominator)
+        self.numerator = numerator
+        self.denominator = denominator
+        print(rep)
         if rep < 0.5:
-            messages = [{"role": "system", "content": "You are to be a more helpful assistant and should ask follow up questions to help formulate a better response"},
+            messages = [{"role": "system", "content": "You to ask follow up questions to help formulate a better response"},
                         {"role": "user", "content": prompt },]
             self.message_history = self.message_history + messages
             prompt = self._pipeline.tokenizer.apply_chat_template(
@@ -67,41 +80,23 @@ class LLM:
                 top_p=0.9,
             )
             return outputs[0]["generated_text"][len(prompt):]
-        else: return "Thank you for your feedback"
+        else: 
+            return "Thank you for your feedback"
     
-    
-      
-    def infer_llm(self, prompt:str, roleplay: Optional[str]):
-        
-        if prompt and roleplay=='user':
-            messages = [{"role": "system", "content": "You are a helpful assistant and answer the prompts to the best of your ability. "},
-                        {"role": "user", "content": prompt  },]
-            self.prompt_history.append(prompt)
-            max_window = max(3, len(self.prompt_history))
-            self.prompt_history[:max_window]
-            self.message_history = self.message_history + messages
-            # self.chat_history.append(messages)
-        else:
-            messages = [{"role": "system", "content": "You are a helpful assistant!"},
-                        {"role": "user", "content": "What model are you based on" },]
-            
-  
+    #need to extract the score and pass it to reputation calculator
+    def evaluate_llm_resp(self, prompt:str):
+        messages = [{"role": "system", 
+                     "content": "You are an evaluator for the following response from a LLM, Please provide:\n"
+        "- A score between 0 to 10 evaluating on completion, quality, and overall performance"
+        "Check if the response have any hallucinations"
+        "- Bullet points suggestions to improve similar tasks in the future \n" 
+        },
+        {"role": "user",
+          "content": prompt},]
         prompt = self._pipeline.tokenizer.apply_chat_template(
-        self.message_history ,
-        tokenize=False,
-        add_generation_prompt=True)
-
-        if roleplay == 'evaluator':
-            #prompt is the response in this case
-            messages = [{"role": "system", "content": "You are an evaluator for the following response, Please provide:\n"
-            f"- Bullet points suggestions to improve future similar tasks and prompt {self.prompt_history[-1]} \n" 
-            "Check if the response have any hallucinations"
-            "- A score from 0 to 10 evaluating on completion, quality, and overall performance"},
-            {"role": "user", "content": prompt },]
-            prompt = self._pipeline.tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True)
+            messages,
+            tokenize=False,
+            add_generation_prompt=True)
         
         terminators = [
             self._pipeline.tokenizer.eos_token_id,
@@ -116,11 +111,67 @@ class LLM:
             temperature=0.6,
             top_p=0.9,
         )
+
+        # print(outputs[0])
+        self.llm_eval_score = self.find_score(outputs[0]["generated_text"][len(prompt):])
+        return (outputs[0]["generated_text"][len(prompt):])
+
+    def rag_llm(self, prompt:str):
+        rag_use = RAG()
+        rag_use.read_docs(['/home/xavier002/Private_LLM/data/activelearning.pdf'])
+        rag_use.initiate_models()
+        response = rag_use.rag_query(prompt)
+        return response    
+    
+    def infer_llm(self, prompt:str):
+        rag_response = None
+        self.count +=1
+        print(prompt)
+        if prompt:
+            check_rag = re.search(r"\bRAG\b", prompt)
+            if check_rag:
+                print('-----using RAG----')
+                rag_response = self.rag_llm(prompt)
+                
+            messages = [{"role": "system", "content": "You are a helpful assistant and answer the prompts to the best of your ability. "},
+                        {"role": "user", "content": prompt  },]
+            self.prompt_history.append(prompt)
+            max_window = max(3, len(self.prompt_history))
+            self.prompt_history[:max_window]
+            self.message_history = self.message_history + messages
+            return str(rag_response)
+        else:
+            messages = [{"role": "system", "content": "You are a helpful assistant!"},
+                        {"role": "user", "content": "What model are you based on" },]
+        
+
+        prompt = self._pipeline.tokenizer.apply_chat_template(
+        self.message_history ,
+        tokenize=False,
+        add_generation_prompt=True)
+
+        terminators = [
+            self._pipeline.tokenizer.eos_token_id,
+            self._pipeline.tokenizer.convert_tokens_to_ids("<|eot_id|>")
+        ]
+
+        outputs = self._pipeline(
+            prompt,
+            max_new_tokens=256,
+            eos_token_id=terminators,
+            do_sample=True,
+            temperature=0.6,
+            top_p=0.9,
+        )
+            
         # print(outputs[0]["generated_text"][len(prompt):])
         return outputs[0]["generated_text"][len(prompt):]
 
     def get_pipeline(self):
         return self._pipeline
 
-# llm = LLM()
-# llm.infer_llm("test")
+    def find_score(self, response):
+        score = re.search("[1]?[0-9]", response)
+        print(score.group(0))
+        return int(score.group(0))
+

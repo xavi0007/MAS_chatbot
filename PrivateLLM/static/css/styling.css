@@ -123,8 +123,20 @@ body {
     flex: 1;
     margin: 5px;
 }
-.feedback-box button.bad {
-    background-color: #dc3545;
+.feedback-box button.onescore {
+    background-color: #DE3163;
+}
+.feedback-box button.twoscore {
+    background-color: #FF7F50;
+}
+.feedback-box button.threescore {
+    background-color: #FFBF00;
+}
+.feedback-box button.fourscore {
+    background-color: #40E0D0;
+}
+.feedback-box button.fivescore {
+    background-color: #9FE2BF;
 }
 .feedback-box button:hover {
     opacity: 0.9;
