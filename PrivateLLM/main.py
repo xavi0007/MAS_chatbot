@@ -39,7 +39,6 @@ def chat():
     
     ## place holder
     # response = get_bot_response(message)
-    # evaluate_response = f'{COUNT}'
     
     return jsonify({'response': response, 'evaluation': evaluate_response})
 
@@ -79,4 +78,4 @@ def create_app(test_config=None):
     return app
 
 if __name__ =='__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='172.21.47.117', port=5000)
