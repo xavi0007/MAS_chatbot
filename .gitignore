@@ -14,5 +14,5 @@ build/
 *.egg-info/
 
 data/
-
+logs/ 
 .env
