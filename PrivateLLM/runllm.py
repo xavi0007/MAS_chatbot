@@ -30,7 +30,7 @@ from ragLLM import RAG
 class LLM:  
     def __init__(self) -> None:
         self.key = '' 
-        self.device ='cuda:0'
+        self.device ='cuda:1'
         self.model_name = "unsloth/llama-3-8b-Instruct-bnb-4bit"
         # self.device = 'auto'
         # Use a pipeline as a high-level helper
