@@ -58,7 +58,7 @@ class LLM:
         self.denominator = denominator
         print(rep)
         if rep < 0.5:
-            messages = [{"role": "system", "content": "You to ask follow up questions to help formulate a better response"},
+            messages = [{"role": "system", "content": "You are to ask follow up questions to help formulate a better response"},
                         {"role": "user", "content": prompt },]
             self.message_history = self.message_history + messages
             prompt = self._pipeline.tokenizer.apply_chat_template(
@@ -83,6 +83,49 @@ class LLM:
         else: 
             return "Thank you for your feedback"
     
+    def break_tasks(self, prompt, num_task = 2) -> list[str]:
+        messages = [{"role": "system", "content": f"You are the main task coordinator, break the complex prompt into at most {num_task} easier prompts, such that smaller models can complete it. Add a # after every sub-task"},
+                        {"role": "user", "content": prompt },]
+        prompt = self._pipeline.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True)
+                
+        terminators = [
+            self._pipeline.tokenizer.eos_token_id,
+            self._pipeline.tokenizer.convert_tokens_to_ids("<|eot_id|>")
+        ]
+
+        outputs = self._pipeline(
+            prompt,
+            max_new_tokens=256,
+            eos_token_id=terminators,
+            do_sample=True,
+            temperature=0.6,
+            top_p=0.9,
+        )
+        
+        generated_text =  outputs[0]["generated_text"][len(prompt):]
+        # Split the string based on the character "#"
+        split_string = generated_text.strip().split("#")
+        # Remove any empty strings and leading/trailing spaces
+        prompt_array = [s for s in split_string if s]
+        output_array = []
+        for idx, mini_prompts in enumerate(prompt_array):
+            if idx == 0:
+                continue
+            print('----sub-prompts---')
+            print(mini_prompts)
+            print('----OutPUT:---')
+            
+            output = self.infer_llm(str(mini_prompts), is_complex=False)
+            print(output)
+
+            output_array.append(output)
+
+        combined_answer = ' '.join(output_array)
+        return str(combined_answer)
+
     #need to extract the score and pass it to reputation calculator
     def evaluate_llm_resp(self, prompt:str):
         messages = [{"role": "system", 
@@ -123,15 +166,19 @@ class LLM:
         response = rag_use.rag_query(prompt)
         return response    
     
-    def infer_llm(self, prompt:str):
+    def infer_llm(self, prompt , is_complex=True):
         rag_response = None
         self.count +=1
-        print(prompt)
+        generated_response = None
+        # print(prompt)
+        if is_complex:
+            generated_response = str(self.break_tasks(prompt))
         if prompt:
             check_rag = re.search(r"\bRAG\b", prompt)
             if check_rag:
                 print('-----using RAG----')
                 rag_response = self.rag_llm(prompt)
+                return str(rag_response)
                 
             messages = [{"role": "system", "content": "You are a helpful assistant and answer the prompts to the best of your ability. "},
                         {"role": "user", "content": prompt  },]
@@ -139,7 +186,6 @@ class LLM:
             max_window = max(3, len(self.prompt_history))
             self.prompt_history[:max_window]
             self.message_history = self.message_history + messages
-            return str(rag_response)
         else:
             messages = [{"role": "system", "content": "You are a helpful assistant!"},
                         {"role": "user", "content": "What model are you based on" },]
@@ -164,8 +210,10 @@ class LLM:
             top_p=0.9,
         )
             
-        # print(outputs[0]["generated_text"][len(prompt):])
-        return outputs[0]["generated_text"][len(prompt):]
+        if generated_response == None:
+            generated_response = outputs[0]["generated_text"][len(prompt):]
+
+        return generated_response
 
     def get_pipeline(self):
         return self._pipeline
