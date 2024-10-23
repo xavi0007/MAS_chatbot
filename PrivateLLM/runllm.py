@@ -8,6 +8,7 @@ from datasets import load_dataset
 from typing import Optional
 import re
 from utils import calculate_rep
+import textgrad as tg
 # from accelerate import Accelerator
 # from peft import (
 #     LoraConfig,
@@ -114,9 +115,9 @@ class LLM:
         for idx, mini_prompts in enumerate(prompt_array):
             if idx == 0:
                 continue
-            print('----sub-prompts---')
+            
             print(mini_prompts)
-            print('----OutPUT:---')
+            
             
             output = self.infer_llm(str(mini_prompts), is_complex=False)
             print(output)
@@ -165,6 +166,24 @@ class LLM:
         rag_use.initiate_models()
         response = rag_use.rag_query(prompt)
         return response    
+    
+    def optimise_model(self, init_prompt:str, generated_result:str):
+
+        question = tg.Variable(init_prompt,
+                       role_description="question to the LLM",
+                       requires_grad=False)
+        optimizer = tg.TGD(parameters=[generated_result])
+        evaluation_instruction = (f"Here's a question: {init_prompt}. "
+                           "Evaluate any given answer to this question, "
+                           "be smart, logical, and very critical. "
+                           "Just provide concise feedback.")
+        loss_fn = tg.TextLoss(evaluation_instruction)
+        loss = loss_fn(generated_result)
+        loss.backward()
+        optimizer.step()
+        # print('-'*20)
+        # print(generated_result)
+
     
     def infer_llm(self, prompt , is_complex=True):
         rag_response = None
