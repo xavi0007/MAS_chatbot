@@ -3,7 +3,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
 from transformers import AutoTokenizer
 
-
+"simple RAG, for fine-tuning refer ro fine_tune_rag"
 class RAG:
     def __init__(self) -> None:
         self.docs = None
