@@ -83,13 +83,13 @@ class RAG_LLM:
                     )
         return train_dataset, val_dataset
     
-    def train_RAG(self) -> object:
-        train_dataset, val_dataset = self.generate_dataset()
+    def train_RAG(self, train_dataset, val_dataset) -> object:
+        # train_dataset, val_dataset = self.generate_dataset()
 
         finetune_engine = SentenceTransformersFinetuneEngine(
             train_dataset,
             model_id="BAAI/bge-small-en",
-            model_output_path="test_model",
+            model_output_path="/home/xavier002/Private_LLM/models",
             val_dataset=val_dataset,
         )
 
@@ -126,10 +126,10 @@ class RAG_LLM:
             }
             eval_results.append(eval_result)
         
-        df_bge = pd.DataFrame(eval_results)
-        hit_rate = df_bge["is_hit"].mean()
+        df_results = pd.DataFrame(eval_results)
+        hit_rate = df_results["is_hit"].mean()
         print(hit_rate)
-        return eval_results
+        return eval_results, hit_rate
 
 
 
@@ -139,4 +139,10 @@ rag.ask_RAG(text_prompt)
 #Run to get corpus data
 # train, val = rag.generate_dataset()
 val_dataset = EmbeddingQAFinetuneDataset.from_json("/home/xavier002/Private_LLM/data/10k/val_dataset.json")
-rag.evaluate_RAG(val_dataset)
+train_dataset = EmbeddingQAFinetuneDataset.from_json("/home/xavier002/Private_LLM/data/10k/train_dataset.json")
+
+#before
+_, hitrate_before = rag.evaluate_RAG(val_dataset)
+#after
+ft_emodel = rag.train_RAG(train_dataset, val_dataset)
+_, hitrate_after = rag.evaluate_RAG(val_dataset, ft_emodel)
